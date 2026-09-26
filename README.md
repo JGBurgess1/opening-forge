@@ -149,6 +149,64 @@ Bc5 c3 Nf6 d4 exd4
 
 ---
 
+## 🖥️ Web GUI (Opening Explorer)
+
+A Django web application lives alongside the CLI tool: an interactive
+chessboard where the move panel next to the board updates after every move
+with the win-rate breakdown (White / Draw / Black) for every reply seen in
+the imported games, drawn from a database of real grandmaster games.
+When a line has been played in **3 or fewer** imported games, the
+breakdown is replaced with a link to view those exact games (players,
+event, result, full PGN) instead of a statistically meaningless
+percentage split.
+
+### Setup
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate        # on Windows
+# source .venv/bin/activate   # on macOS/Linux
+
+pip install -r requirements.txt
+
+python manage.py migrate
+```
+
+### Get some games into the database
+
+The repository does not ship a multi-million-game archive. To try the
+GUI immediately, generate a small **synthetic** sample dataset (clearly
+labeled as such in every game's PGN headers) built from real ECO opening
+lines with randomized legal continuations and results:
+
+```bash
+python manage.py generate_sample_pgn
+python manage.py ingest_pgn data/sample_games.pgn --source-label "Synthetic sample"
+```
+
+To use **real games**, ingest any standard PGN file the same way:
+
+```bash
+python manage.py ingest_pgn path/to/real_grandmaster_games.pgn --source-label "My GM archive"
+```
+
+`ingest_pgn` re-parses the whole file into an in-memory move tree before
+writing it to the database in one transaction, which is fine for sample
+or curated datasets (hundreds to low thousands of games). Ingesting a
+true "millions of games" archive would need a streaming/DB-side
+aggregation rewrite of that command — the model layer (`PositionNode`,
+`Game`) doesn't need to change for that, only the ingestion strategy.
+
+### Run it
+
+```bash
+python manage.py runserver
+```
+
+Then open <http://127.0.0.1:8000/> in a browser.
+
+---
+
 ## 📚 Documentation
 
 - 📍 **ROADMAP.md** — Project vision and development roadmap

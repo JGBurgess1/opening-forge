@@ -1,0 +1,70 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Opening Forge -- Opening Explorer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
+  <link rel="stylesheet" href="{% static 'explorer/css/style.css' %}">
+</head>
+<body>
+  <header>
+    <h1>Opening Forge <span class="subtitle">Opening Explorer</span></h1>
+  </header>
+
+  <main>
+    <section class="board-column">
+      <div id="board"></div>
+      <div class="board-controls">
+        <button id="btn-reset">Reset</button>
+        <button id="btn-back" disabled>Back</button>
+      </div>
+      <div id="move-history"></div>
+    </section>
+
+    <section class="panel-column">
+      <div id="opening-name" class="opening-name"></div>
+      <div id="position-summary" class="position-summary"></div>
+
+      <div id="low-sample-banner" class="low-sample-banner" hidden>
+        <p>Only <span id="low-sample-count"></span> game(s) in the database reach this exact
+           position -- not enough for a meaningful move breakdown.</p>
+        <button id="btn-view-games">View the remaining game(s)</button>
+      </div>
+
+      <h2>Next moves in the database</h2>
+      <table id="moves-table">
+        <thead>
+          <tr><th>Move</th><th>Games</th><th>White</th><th>Draw</th><th>Black</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p id="no-data-msg" class="no-data-msg" hidden>
+        No games in the database follow this move. The board still lets you play on, off-book.
+      </p>
+    </section>
+  </main>
+
+  <div id="games-modal" class="modal" hidden>
+    <div class="modal-content">
+      <button id="btn-close-modal" class="modal-close">&times;</button>
+      <h2>Games reaching this position</h2>
+      <div id="games-list"></div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://unpkg.com/chess.js@0.10.3/chess.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+  <script>
+    window.EXPLORER_CONFIG = {
+      rootUrl: "{% url 'explorer:api_root' %}",
+      nodeUrlBase: "/api/node/",
+      pieceTheme: "{% static 'explorer/img/chesspieces/wikipedia/' %}{piece}.png",
+    };
+  </script>
+  <script src="{% static 'explorer/js/app.js' %}"></script>
+</body>
+</html>

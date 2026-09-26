@@ -1,0 +1,99 @@
+* { box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  margin: 0;
+  background: #f5f3ef;
+  color: #22201d;
+}
+
+header {
+  padding: 1rem 1.5rem;
+  background: #1f2733;
+  color: #fff;
+}
+
+header h1 { margin: 0; font-size: 1.4rem; }
+.subtitle { font-weight: 400; opacity: 0.75; font-size: 1rem; margin-left: 0.5rem; }
+
+main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  padding: 1.5rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.board-column { flex: 0 0 420px; }
+#board { width: 400px; }
+
+.board-controls { margin-top: 0.75rem; display: flex; gap: 0.5rem; }
+.board-controls button {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid #b8b0a4;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.board-controls button:disabled { opacity: 0.4; cursor: default; }
+
+#move-history {
+  margin-top: 0.75rem;
+  font-family: "SF Mono", Consolas, monospace;
+  font-size: 0.9rem;
+  color: #4a453d;
+  min-height: 1.4em;
+}
+
+.panel-column { flex: 1 1 340px; min-width: 300px; }
+
+.opening-name { font-size: 1.2rem; font-weight: 600; min-height: 1.5em; }
+.position-summary { color: #55504a; margin-bottom: 1rem; min-height: 1.2em; }
+
+.low-sample-banner {
+  background: #fff3d6;
+  border: 1px solid #e0c377;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+.low-sample-banner p { margin: 0 0 0.5rem; }
+.low-sample-banner button {
+  padding: 0.35rem 0.8rem;
+  border-radius: 4px;
+  border: 1px solid #b8860b;
+  background: #fcecc4;
+  cursor: pointer;
+}
+
+#moves-table { width: 100%; border-collapse: collapse; }
+#moves-table th, #moves-table td {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid #e4ded3;
+  font-size: 0.92rem;
+}
+.move-row { cursor: pointer; }
+.move-row:hover { background: #ece6d9; }
+.move-cell { font-weight: 600; }
+
+.no-data-msg { color: #7a7468; font-style: italic; }
+
+.modal {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center;
+}
+.modal[hidden] { display: none; }
+.modal-content {
+  background: #fff; border-radius: 8px; padding: 1.5rem;
+  max-width: 560px; width: 90%; max-height: 80vh; overflow-y: auto;
+  position: relative;
+}
+.modal-close {
+  position: absolute; top: 0.5rem; right: 0.75rem;
+  border: none; background: none; font-size: 1.4rem; cursor: pointer;
+}
+.game-entry { padding: 0.6rem 0; border-bottom: 1px solid #eee; }
+.game-meta { color: #77726a; font-size: 0.85rem; }

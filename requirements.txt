@@ -4,3 +4,4 @@ numpy>=2.3.0
 zstandard>=0.24.0
 tqdm>=4.67.0
 pytest>=8.0.0
+Django>=5.0

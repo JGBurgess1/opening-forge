@@ -1,4 +1,5 @@
 venv/
+.venv/
 
 data/lichess_db_eval.jsonl.zst
 engine/*.exe
@@ -8,3 +9,7 @@ __pycache__/
 
 data/archive/
 data/raw_backup/
+
+# Django web GUI
+db.sqlite3
+staticfiles/
