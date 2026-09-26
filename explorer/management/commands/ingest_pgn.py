@@ -7,20 +7,30 @@ Nodes at or below settings.LOW_SAMPLE_THRESHOLD keep a link to the actual
 Game rows so the UI can offer a "view the games" link instead of a
 statistically meaningless win-rate breakdown.
 
-This does an in-memory aggregation pass before writing to the database,
-which is appropriate for the sample/validation datasets this project
-ships with (hundreds to low thousands of games). Ingesting a real
-multi-million-game archive would need a streaming/DB-side aggregation
-strategy instead -- see README.md.
+Games are first filtered cheaply with chess.pgn.read_headers() (which
+skips movetext parsing entirely), and only games that pass --min-elo are
+fully parsed and pushed through a board to get SAN move lists. That
+makes it practical to point this at a multi-million-game archive (e.g.
+a full Lichess monthly database dump) and pull out just the subset
+played by strong players -- the header-only scan runs at file-read
+speed regardless of archive size.
+
+The *matched* games are still aggregated into the move tree fully
+in-memory before being written to the database in one transaction. That
+is fine for the kind of subset --min-elo produces (thousands to tens of
+thousands of games) but would need a streaming/DB-side aggregation
+rewrite if you wanted to ingest an entire unfiltered multi-million-game
+archive without any filter.
 """
 
-import io
+import os
 
 import chess
 import chess.pgn
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from tqdm import tqdm
 
 from explorer.models import Game, PositionNode
 
@@ -71,9 +81,23 @@ class Command(BaseCommand):
             help="Keep existing games/tree and merge new games into them "
             "instead of clearing the database first.",
         )
+        parser.add_argument(
+            "--min-elo",
+            type=int,
+            default=None,
+            help="Only import games where both players' Elo is at or above this value. "
+            "Cheaply skips non-matching games without fully parsing their moves, so "
+            "this is the way to pull a manageable subset out of a huge archive.",
+        )
+        parser.add_argument(
+            "--max-games",
+            type=int,
+            default=None,
+            help="Stop after importing this many matching games (default: no limit).",
+        )
 
-    def handle(self, pgn_path, source_label, append, **options):
-        parsed_games = list(self._parse_pgn(pgn_path, source_label))
+    def handle(self, pgn_path, source_label, append, min_elo, max_games, **options):
+        parsed_games = list(self._parse_pgn(pgn_path, source_label, min_elo, max_games))
         if not parsed_games:
             raise CommandError("No games with a decisive/drawn result were found to import.")
 
@@ -146,20 +170,50 @@ class Command(BaseCommand):
             total += self._write_tree(child, db_node, game_objs, threshold)
         return total
 
-    def _parse_pgn(self, pgn_path, source_label):
+    def _parse_pgn(self, pgn_path, source_label, min_elo, max_games):
         try:
             f = open(pgn_path, "r", encoding="utf-8", errors="replace")
         except OSError as exc:
             raise CommandError(f"Could not open {pgn_path}: {exc}")
 
-        with f:
+        try:
+            file_size = os.path.getsize(pgn_path)
+        except OSError:
+            file_size = None
+
+        matched = 0
+        with f, tqdm(total=file_size, unit="B", unit_scale=True, desc="scanning") as bar:
+            last_pos = f.tell()
             while True:
-                game = chess.pgn.read_game(f)
-                if game is None:
+                if max_games is not None and matched >= max_games:
                     break
 
-                result = game.headers.get("Result", "*")
+                # read_headers() is much cheaper than read_game(): it skips
+                # the movetext without validating/building moves. Only games
+                # that pass the Elo filter get seeked-back and fully parsed.
+                offset = f.tell()
+                headers = chess.pgn.read_headers(f)
+                bar.update(f.tell() - last_pos)
+                last_pos = f.tell()
+                if headers is None:
+                    break
+
+                if min_elo is not None:
+                    white_elo = self._to_int(headers.get("WhiteElo"))
+                    black_elo = self._to_int(headers.get("BlackElo"))
+                    if white_elo is None or black_elo is None:
+                        continue
+                    if white_elo < min_elo or black_elo < min_elo:
+                        continue
+
+                result = headers.get("Result", "*")
                 if result not in RESULT_TO_BUCKET:
+                    continue
+
+                f.seek(offset)
+                game = chess.pgn.read_game(f)
+                last_pos = f.tell()
+                if game is None:
                     continue
 
                 board = game.board()
@@ -174,21 +228,25 @@ class Command(BaseCommand):
                 exporter = chess.pgn.StringExporter(headers=True, variations=False, comments=False)
                 pgn_text = game.accept(exporter)
 
-                def to_int(value):
-                    try:
-                        return int(value)
-                    except (TypeError, ValueError):
-                        return None
+                matched += 1
+                bar.set_postfix(matched=matched)
 
                 yield {
                     "white": game.headers.get("White", "?"),
                     "black": game.headers.get("Black", "?"),
-                    "white_elo": to_int(game.headers.get("WhiteElo")),
-                    "black_elo": to_int(game.headers.get("BlackElo")),
+                    "white_elo": self._to_int(game.headers.get("WhiteElo")),
+                    "black_elo": self._to_int(game.headers.get("BlackElo")),
                     "result": result,
                     "event": game.headers.get("Event", ""),
                     "site": game.headers.get("Site", ""),
-                    "date": game.headers.get("Date", ""),
+                    "date": game.headers.get("UTCDate") or game.headers.get("Date", ""),
                     "moves": moves,
                     "pgn_text": pgn_text,
                 }
+
+    @staticmethod
+    def _to_int(value):
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None

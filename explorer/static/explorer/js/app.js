@@ -96,12 +96,9 @@
     });
   }
 
-  function playSan(san) {
-    var move = game.move(san);
-    if (!move) return; // shouldn't happen for moves sourced from the DB/board
-
-    board.position(game.fen());
-
+  // Assumes `game` (chess.js) already has the move applied -- looks the
+  // resulting position up against the database and updates the panels.
+  function confirmMove(san) {
     var current = currentNode();
 
     if (current.id === null) {
@@ -130,15 +127,34 @@
       });
   }
 
+  // Used when a move is chosen by clicking a row in the moves table --
+  // chess.js hasn't applied it yet.
+  function playSan(san) {
+    var move = game.move(san);
+    if (!move) return; // shouldn't happen for moves sourced from the DB
+    board.position(game.fen());
+    confirmMove(san);
+  }
+
+  // Dragging a piece on the board. Per chessboard.js's own guidance, the
+  // board position must NOT be touched from inside onDrop -- do it in
+  // onSnapEnd once the built-in drag animation has finished, or the
+  // board's internal drag state and our position updates race each other.
+  var pendingSan = null;
+
   function onDrop(source, target) {
     var move = game.move({ from: source, to: target, promotion: "q" });
     if (move === null) return "snapback";
+    pendingSan = move.san;
+  }
 
+  function onSnapEnd() {
     board.position(game.fen());
-    var san = move.san;
-    game.undo(); // playSan() re-applies it after confirming with the server
-    board.position(game.fen());
-    playSan(san);
+    if (pendingSan) {
+      var san = pendingSan;
+      pendingSan = null;
+      confirmMove(san);
+    }
   }
 
   function resetToRoot() {
@@ -183,6 +199,7 @@
       position: "start",
       draggable: true,
       onDrop: onDrop,
+      onSnapEnd: onSnapEnd,
       pieceTheme: window.EXPLORER_CONFIG.pieceTheme,
     });
 
