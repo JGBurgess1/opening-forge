@@ -25,25 +25,40 @@
     </section>
 
     <section class="panel-column">
-      <div id="opening-name" class="opening-name"></div>
-      <div id="position-summary" class="position-summary"></div>
+      <div id="explorer-view">
+        <div id="opening-name" class="opening-name"></div>
+        <div id="position-summary" class="position-summary"></div>
 
-      <div id="low-sample-banner" class="low-sample-banner" hidden>
-        <p>Only <span id="low-sample-count"></span> game(s) in the database reach this exact
-           position -- not enough for a meaningful move breakdown.</p>
-        <button id="btn-view-games">View the remaining game(s)</button>
+        <div id="low-sample-banner" class="low-sample-banner" hidden>
+          <p>Only <span id="low-sample-count"></span> game(s) in the database reach this exact
+             position -- not enough for a meaningful move breakdown.</p>
+          <button id="btn-view-games">View the remaining game(s)</button>
+        </div>
+
+        <h2>Next moves in the database</h2>
+        <table id="moves-table">
+          <thead>
+            <tr><th>Move</th><th>Games</th><th colspan="2">White / Draw / Black</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <p id="no-data-msg" class="no-data-msg" hidden>
+          No games in the database follow this move. The board still lets you play on, off-book.
+        </p>
       </div>
 
-      <h2>Next moves in the database</h2>
-      <table id="moves-table">
-        <thead>
-          <tr><th>Move</th><th>Games</th><th>White</th><th>Draw</th><th>Black</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <p id="no-data-msg" class="no-data-msg" hidden>
-        No games in the database follow this move. The board still lets you play on, off-book.
-      </p>
+      <div id="game-viewer-view" hidden>
+        <button id="btn-exit-viewer" class="exit-viewer-btn">&larr; Back to explorer</button>
+        <div id="viewer-game-header" class="viewer-game-header"></div>
+        <div class="viewer-controls">
+          <button id="btn-viewer-first" title="First move">|&laquo;</button>
+          <button id="btn-viewer-prev" title="Previous move">&laquo;</button>
+          <span id="viewer-step-label" class="viewer-step-label"></span>
+          <button id="btn-viewer-next" title="Next move">&raquo;</button>
+          <button id="btn-viewer-last" title="Last move">&raquo;|</button>
+        </div>
+        <div id="viewer-move-list" class="viewer-move-list"></div>
+      </div>
     </section>
   </main>
 

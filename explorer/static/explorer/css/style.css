@@ -77,8 +77,68 @@ main {
 .move-row { cursor: pointer; }
 .move-row:hover { background: #ece6d9; }
 .move-cell { font-weight: 600; }
+.bar-cell { width: 110px; }
+.pct-cell { color: #6b665c; font-size: 0.8rem; white-space: nowrap; }
 
 .no-data-msg { color: #7a7468; font-style: italic; }
+
+/* White / Draw / Black result bar */
+.wdb-bar {
+  display: inline-flex;
+  width: 100px;
+  height: 14px;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid #c9c2b4;
+}
+.wdb-white { background: #f4f1e9; }
+.wdb-draw { background: #9c968a; }
+.wdb-black { background: #26241f; }
+.position-summary .wdb-bar { width: 160px; height: 16px; vertical-align: middle; margin-left: 0.5rem; }
+
+/* Game viewer */
+.exit-viewer-btn {
+  border: 1px solid #b8b0a4;
+  background: #fff;
+  border-radius: 4px;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+.viewer-game-header { font-size: 1rem; margin-bottom: 1rem; }
+.viewer-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.viewer-controls button {
+  padding: 0.35rem 0.7rem;
+  border: 1px solid #b8b0a4;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.viewer-controls button:disabled { opacity: 0.4; cursor: default; }
+.viewer-step-label { font-family: "SF Mono", Consolas, monospace; font-size: 0.9rem; color: #55504a; }
+
+.viewer-move-list {
+  font-family: "SF Mono", Consolas, monospace;
+  font-size: 0.95rem;
+  line-height: 1.9;
+}
+.viewer-move-token { cursor: pointer; padding: 0.1rem 0.15rem; border-radius: 3px; }
+.viewer-move-token:hover { background: #ece6d9; }
+.viewer-move-token.active { background: #d8a94a; color: #fff; }
+
+.play-through-btn {
+  margin-top: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid #b8860b;
+  background: #fcecc4;
+  border-radius: 4px;
+  cursor: pointer;
+}
 
 .modal {
   position: fixed; inset: 0;
