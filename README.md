@@ -190,12 +190,36 @@ To use **real games**, ingest any standard PGN file the same way:
 python manage.py ingest_pgn path/to/real_grandmaster_games.pgn --source-label "My GM archive"
 ```
 
-`ingest_pgn` re-parses the whole file into an in-memory move tree before
-writing it to the database in one transaction, which is fine for sample
-or curated datasets (hundreds to low thousands of games). Ingesting a
-true "millions of games" archive would need a streaming/DB-side
-aggregation rewrite of that command — the model layer (`PositionNode`,
-`Game`) doesn't need to change for that, only the ingestion strategy.
+#### Ingesting a full public archive (e.g. a Lichess database dump)
+
+Public archives like the [Lichess open database](https://database.lichess.org/)
+are monthly dumps of every rated game played by every player, not just
+strong ones -- a single month can be millions of games, most of them
+club-level. Use `--min-elo` to pull out just the games played by strong
+players; games that don't meet it are rejected from a cheap header-only
+scan and never get their moves parsed, so this is fast even against a
+multi-gigabyte file:
+
+```bash
+python manage.py ingest_pgn path/to/lichess_db_standard_rated_YYYY-MM.pgn \
+    --min-elo 2200 \
+    --source-label "Lichess standard rated games, YYYY-MM, both players >=2200"
+```
+
+`--min-elo N` keeps only games where **both** players' Elo is at or
+above `N`. Note this is not the same as "grandmaster games" -- these
+archives don't carry player titles, only ratings, so a high Elo cutoff
+is a proxy for strong play, not a guarantee of a titled opponent on
+either side.
+
+The matched games are still aggregated into the move tree fully
+in-memory before being written to the database in one transaction,
+which is fine for the kind of subset `--min-elo` produces out of a
+monthly dump (thousands to tens of thousands of games). Ingesting an
+entire *unfiltered* multi-million-game archive would need a further
+streaming/DB-side aggregation rewrite of the tree-writing step -- the
+model layer (`PositionNode`, `Game`) doesn't need to change for that,
+only the ingestion strategy.
 
 ### Run it
 
