@@ -22,6 +22,11 @@
         <button id="btn-back" disabled>Back</button>
       </div>
       <div id="move-history"></div>
+
+      <div class="engine-panel">
+        <button id="btn-analyze">Analyze position (Stockfish)</button>
+        <div id="engine-result" class="engine-result"></div>
+      </div>
     </section>
 
     <section class="panel-column">
@@ -76,6 +81,7 @@
   <script>
     window.EXPLORER_CONFIG = {
       rootUrl: "{% url 'explorer:api_root' %}",
+      analyzeUrl: "{% url 'explorer:api_analyze' %}",
       nodeUrlBase: "/api/node/",
       pieceTheme: "{% static 'explorer/img/chesspieces/wikipedia/' %}{piece}.png",
     };

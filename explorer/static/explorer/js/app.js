@@ -31,6 +31,9 @@
   var $btnViewerNext = document.getElementById("btn-viewer-next");
   var $btnViewerLast = document.getElementById("btn-viewer-last");
 
+  var $btnAnalyze = document.getElementById("btn-analyze");
+  var $engineResult = document.getElementById("engine-result");
+
   function currentNode() {
     return pathStack[pathStack.length - 1];
   }
@@ -100,6 +103,7 @@
 
     $btnBack.disabled = pathStack.length <= 1;
     renderMoveHistory();
+    clearEngineResult();
   }
 
   function pushNode(node) {
@@ -226,6 +230,7 @@
 
   var viewerMoves = [];
   var viewerIndex = 0; // number of moves played so far (0 = start position)
+  var viewerCurrentFen = null;
 
   function enterGameViewer(gameId) {
     fetchJSON("/api/game/" + gameId + "/").then(function (g) {
@@ -262,7 +267,8 @@
   function renderViewerStep() {
     var replay = new Chess();
     for (var i = 0; i < viewerIndex; i++) replay.move(viewerMoves[i]);
-    board.position(replay.fen());
+    viewerCurrentFen = replay.fen();
+    board.position(viewerCurrentFen);
 
     $viewerStepLabel.textContent = viewerIndex + " / " + viewerMoves.length;
 
@@ -273,6 +279,7 @@
 
     $btnViewerFirst.disabled = $btnViewerPrev.disabled = viewerIndex === 0;
     $btnViewerLast.disabled = $btnViewerNext.disabled = viewerIndex === viewerMoves.length;
+    clearEngineResult();
   }
 
   function viewerStepPrev() {
@@ -298,6 +305,44 @@
     renderNode(node); // recompute $btnBack.disabled from pathStack.length
   }
 
+  // --- Live Stockfish analysis of whatever position is currently on the
+  // board, in either explorer or viewer mode. ---
+
+  function activeFen() {
+    return mode === "viewer" ? viewerCurrentFen : game.fen();
+  }
+
+  function clearEngineResult() {
+    $engineResult.innerHTML = "";
+  }
+
+  function runAnalysis() {
+    var fen = activeFen();
+    if (!fen) return;
+
+    $btnAnalyze.disabled = true;
+    $engineResult.textContent = "Analyzing...";
+
+    fetchJSON(window.EXPLORER_CONFIG.analyzeUrl + "?fen=" + encodeURIComponent(fen))
+      .then(function (data) {
+        if (data.game_over) {
+          $engineResult.textContent = "Game over in this position.";
+          return;
+        }
+        var evalText = (data.mate_in !== null && data.mate_in !== undefined)
+          ? "Mate in " + Math.abs(data.mate_in)
+          : (data.evaluation > 0 ? "+" : "") + data.evaluation;
+        $engineResult.innerHTML =
+          "<strong>Eval:</strong> " + evalText +
+          " &nbsp; <strong>Best move:</strong> " + (data.best_move || "-") +
+          "<br><strong>Line:</strong> " + data.pv.join(" ");
+      })
+      .catch(function (err) {
+        $engineResult.textContent = "Error: " + err.message;
+      })
+      .then(function () { $btnAnalyze.disabled = false; });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     board = Chessboard("board", {
       position: "start",
@@ -310,6 +355,7 @@
     $btnReset.addEventListener("click", resetToRoot);
     $btnBack.addEventListener("click", goBack);
     $btnViewGames.addEventListener("click", openGamesModal);
+    $btnAnalyze.addEventListener("click", runAnalysis);
     $btnCloseModal.addEventListener("click", function () { $modal.hidden = true; });
 
     $btnExitViewer.addEventListener("click", exitViewer);

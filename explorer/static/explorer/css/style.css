@@ -46,6 +46,22 @@ main {
   min-height: 1.4em;
 }
 
+.engine-panel { margin-top: 1rem; }
+.engine-panel button {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid #3a5a40;
+  background: #eaf2e8;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.engine-panel button:disabled { opacity: 0.5; cursor: default; }
+.engine-result {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #33312c;
+  min-height: 1.2em;
+}
+
 .panel-column { flex: 1 1 340px; min-width: 300px; }
 
 .opening-name { font-size: 1.2rem; font-weight: 600; min-height: 1.5em; }

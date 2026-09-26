@@ -4,8 +4,10 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_GET
 
-from . import eco
+from . import eco, engine
 from .models import Game, PositionNode
+
+MAX_ANALYSIS_MOVETIME = 5.0  # seconds -- caps how long one request can hold the shared engine
 
 
 def index(request):
@@ -141,6 +143,36 @@ def api_low_sample_games(request, node_id):
             for g in games
         ]
     })
+
+
+@require_GET
+def api_analyze(request):
+    fen = request.GET.get("fen", "").strip()
+    if not fen:
+        return JsonResponse({"error": "Missing 'fen' query parameter."}, status=400)
+
+    try:
+        chess.Board(fen)
+    except ValueError:
+        return JsonResponse({"error": "Invalid FEN."}, status=400)
+
+    if not engine.is_available():
+        return JsonResponse(
+            {"error": "No chess engine is installed on the server (engine/ is empty)."},
+            status=503,
+        )
+
+    try:
+        movetime = min(float(request.GET.get("movetime", 1.0)), MAX_ANALYSIS_MOVETIME)
+    except ValueError:
+        movetime = 1.0
+
+    try:
+        result = engine.analyze_fen(fen, movetime=movetime)
+    except Exception as exc:
+        return JsonResponse({"error": f"Engine error: {exc}"}, status=500)
+
+    return JsonResponse(result)
 
 
 @require_GET

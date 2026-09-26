@@ -221,13 +221,84 @@ streaming/DB-side aggregation rewrite of the tree-writing step -- the
 model layer (`PositionNode`, `Game`) doesn't need to change for that,
 only the ingestion strategy.
 
-### Run it
+### Run it (just for yourself)
 
 ```bash
 python manage.py runserver
 ```
 
 Then open <http://127.0.0.1:8000/> in a browser.
+
+### Live engine analysis (optional)
+
+Besides the win-rate database, the board has an "Analyze position
+(Stockfish)" button that asks the server to run a real engine search on
+whatever position is currently on screen (including off-book positions
+the imported games never reached), instead of only looking up the
+precomputed evaluations in `data/opening_evals.json`.
+
+This needs a Stockfish binary on the server machine:
+
+```bash
+python manage.py setup_engine
+```
+
+This downloads the latest official Stockfish Windows build into
+`engine/` (gitignored -- each machine gets its own copy rather than
+this being committed). If the binary isn't present, the Analyze button
+still works but the server returns a "no chess engine installed" error
+instead of a crash.
+
+One Stockfish process is kept running for the lifetime of the server
+and shared across all requests/clients (spawning a fresh engine process
+per request would add ~1s of startup latency to every analysis). A lock
+serializes access to it, and each analysis request is capped at 5
+seconds, so one slow client can't block everyone else indefinitely --
+but note this does mean analysis requests from different clients queue
+up rather than running in parallel.
+
+### Hosting it for other devices on your network
+
+The GUI is a normal web app, so any browser -- including on another
+computer or a phone -- can use it once the server is listening on your
+network instead of just `127.0.0.1`. Two things to change from the
+"just for yourself" setup:
+
+**1. Use a real server, not the Django dev server.** `manage.py
+runserver` is single-threaded by default and explicitly not meant for
+concurrent multi-client use, which is exactly the situation once
+several devices are hitting it at once. This project includes a
+`serve` command that runs it under [waitress](https://docs.pylonsproject.org/projects/waitress/)
+instead, a production-ready pure-Python WSGI server:
+
+```bash
+python manage.py serve --host 0.0.0.0 --port 8000
+```
+
+`--host 0.0.0.0` binds every network interface, not just localhost.
+The command prints the LAN URL to share with other devices, e.g.
+`http://192.168.1.42:8000/` -- use `ipconfig` (Windows) / `ifconfig` /
+`ip addr` if you need to find that address yourself. Every client just
+opens that URL in a browser; there's no separate client install.
+
+**2. Allow the port through Windows Firewall.** Windows blocks inbound
+connections to a new listening port by default. Run this once, from an
+**elevated** (Run as Administrator) PowerShell prompt:
+
+```powershell
+New-NetFirewallRule -DisplayName "Opening Forge" -Direction Inbound -LocalPort 8000 -Protocol TCP -Action Allow -Profile Private
+```
+
+(`-Profile Private` scopes this to trusted networks like your home
+Wi-Fi, not public ones.)
+
+This setup is meant for a trusted local network (home Wi-Fi, a LAN
+party, a classroom), not the public internet -- `DEBUG = True` in
+`config/settings.py` is left on for easier troubleshooting, which means
+anyone who *can* reach the server sees full Django error pages
+(stack traces, file paths) if something breaks. Turn it off
+(`DEBUG = False`) and put a real value in `SECRET_KEY` before exposing
+this any more broadly than that.
 
 ---
 

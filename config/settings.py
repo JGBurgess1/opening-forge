@@ -64,6 +64,10 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+# This is served over plain HTTP on a local network, not HTTPS -- Django's
+# default COOP header is meaningless there and just logs a browser warning.
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Position paths with more than this many games recorded are considered
