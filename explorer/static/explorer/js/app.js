@@ -275,6 +275,18 @@
     $btnViewerLast.disabled = $btnViewerNext.disabled = viewerIndex === viewerMoves.length;
   }
 
+  function viewerStepPrev() {
+    if (mode !== "viewer") return;
+    viewerIndex = Math.max(0, viewerIndex - 1);
+    renderViewerStep();
+  }
+
+  function viewerStepNext() {
+    if (mode !== "viewer") return;
+    viewerIndex = Math.min(viewerMoves.length, viewerIndex + 1);
+    renderViewerStep();
+  }
+
   function exitViewer() {
     mode = "explorer";
     $viewerView.hidden = true;
@@ -302,9 +314,20 @@
 
     $btnExitViewer.addEventListener("click", exitViewer);
     $btnViewerFirst.addEventListener("click", function () { viewerIndex = 0; renderViewerStep(); });
-    $btnViewerPrev.addEventListener("click", function () { viewerIndex = Math.max(0, viewerIndex - 1); renderViewerStep(); });
-    $btnViewerNext.addEventListener("click", function () { viewerIndex = Math.min(viewerMoves.length, viewerIndex + 1); renderViewerStep(); });
+    $btnViewerPrev.addEventListener("click", viewerStepPrev);
+    $btnViewerNext.addEventListener("click", viewerStepNext);
     $btnViewerLast.addEventListener("click", function () { viewerIndex = viewerMoves.length; renderViewerStep(); });
+
+    document.addEventListener("keydown", function (e) {
+      if (mode !== "viewer") return;
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        viewerStepNext();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        viewerStepPrev();
+      }
+    });
 
     fetchJSON(window.EXPLORER_CONFIG.rootUrl)
       .then(function (root) {
